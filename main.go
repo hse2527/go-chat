@@ -3,18 +3,19 @@ package main
 import (
 	"fmt"
 	"net/http"
+
 	"github.com/gorilla/websocket"
 )
 
 var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool {
-	 return true
+		return true
 	},
 }
 
 type Message struct {
 	Recipient string `json:"recipient"`
-	Message  string `json:"message"`
+	Message   string `json:"message"`
 }
 
 var clients = make(map[(*websocket.Conn)]bool)
@@ -28,9 +29,9 @@ func main() {
 		connectedClients := getConnectedClients()
 		fmt.Fprintf(w, "Connected clients: %v", connectedClients)
 	})
-   
+
 	go handleMessages()
-   
+
 	fmt.Println("Server started on :8080")
 	err := http.ListenAndServe(":8080", nil)
 	if err != nil {
@@ -51,10 +52,10 @@ func handleConnections(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer conn.Close()
-   
+
 	clients[conn] = true
 	clientMap[conn] = sender
-   
+
 	for {
 		var msg Message
 		err := conn.ReadJSON(&msg)
@@ -63,7 +64,7 @@ func handleConnections(w http.ResponseWriter, r *http.Request) {
 			delete(clients, conn)
 			return
 		}
-	
+
 		broadcast <- msg
 	}
 }
@@ -71,7 +72,7 @@ func handleConnections(w http.ResponseWriter, r *http.Request) {
 func handleMessages() {
 	for {
 		msg := <-broadcast
-   
+
 		for client := range clients {
 			if msg.Recipient != "" && msg.Recipient == clientMap[client] {
 				err := client.WriteJSON(msg)
